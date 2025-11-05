@@ -17,17 +17,21 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
     List<FileEntity> findByFolder(Folder folder);
     
     @Query("""
-            SELECT new com.SkyDoc.demo.dto.DocumentDTO(
-                f.id,
-                f.name,
-                f.filePath,
-                f.contentType,
-                f.size,
-                f.folder.id,
-                f.createdAt
-            )
-            FROM FileEntity f
-            WHERE f.isDeleted = false
-        """)
-        List<DocumentDTO> findAllActiveDocuments();
+    	    SELECT new com.SkyDoc.demo.dto.DocumentDTO(
+    	        f.id,
+    	        f.name,
+    	        f.filePath,
+    	        f.contentType,
+    	        f.size,
+    	        f.folder.id,
+    	        f.createdAt,
+    	        f.issueDate,
+    	        f.issueType,
+    	        f.revisionNumber
+    	    )
+    	    FROM FileEntity f
+    	    WHERE f.isDeleted = false
+    	""")
+    	List<DocumentDTO> findAllActiveDocuments();
+
     }

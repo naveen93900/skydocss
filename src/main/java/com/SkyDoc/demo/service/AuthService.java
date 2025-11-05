@@ -18,29 +18,35 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // ✅ Register user with hashed password
+    // ✅ Register new user with encoded password
     public User register(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 
     // ✅ Login user (validate password using BCrypt)
-    public Optional<User> login(String username, String password) {
+    public Optional<User> login(String username, String rawPassword) {
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            if (passwordEncoder.matches(password, user.getPassword())) {
+            if (passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
                 return Optional.of(user);
             }
         }
         return Optional.empty();
     }
 
-    // ✅ Change password
-    public void changePassword(String username, String newPassword) {
-        userRepository.findByUsername(username).ifPresent(user -> {
+    // ✅ Check if username already exists
+    public boolean usernameExists(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    // ✅ Change user password
+    public boolean changePassword(String username, String newPassword) {
+        return userRepository.findByUsername(username).map(user -> {
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
-        });
+            return true;
+        }).orElse(false);
     }
 }

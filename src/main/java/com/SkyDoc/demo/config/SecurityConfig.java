@@ -88,7 +88,7 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/api/auth/**", "/api/users/**", "/api/folders/**", "/api/files/**").permitAll() // ✅ added "/"
+                .requestMatchers("/", "/api/auth/**","/api/history/**", "/api/users/**", "/api/folders/**", "/api/files/**").permitAll() // ✅ added "/"
                 .anyRequest().authenticated()
             )
             .httpBasic(httpBasic -> httpBasic.disable()) // disable basic auth
@@ -104,6 +104,7 @@ public class SecurityConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**") // ✅ allow all endpoints for CORS
                         .allowedOrigins(
+                        	"http://localhost:5173",
                             "https://skydocss.netlify.app",
                             "https://skydocss-2.onrender.com" // ✅ allow backend itself
                         )

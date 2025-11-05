@@ -3,6 +3,7 @@ package com.SkyDoc.demo.entity;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -11,8 +12,8 @@ import java.util.Set;
 @Entity
 @Table(name = "users")
 public class User implements Serializable {
-	
-	 private static final long serialVersionUID = 1L;
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,7 +29,11 @@ public class User implements Serializable {
     private String username;
 
     @Column(nullable = false)
-    private String password;
+    private String password; // store plain password (if needed for audit — not secure in prod)
+
+    @JsonIgnore
+    @Column(name = "password_hash")
+    private String passwordHash; // securely encoded password
 
     private String email;
 
@@ -59,73 +64,34 @@ public class User implements Serializable {
     }
 
     // ✅ Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
-    public String getEmployeeName() {
-        return employeeName;
-    }
+    public String getEmployeeName() { return employeeName; }
+    public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }
 
-    public void setEmployeeName(String employeeName) {
-        this.employeeName = employeeName;
-    }
+    public String getEmployeeId() { return employeeId; }
+    public void setEmployeeId(String employeeId) { this.employeeId = employeeId; }
 
-    public String getEmployeeId() {
-        return employeeId;
-    }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
-    public void setEmployeeId(String employeeId) {
-        this.employeeId = employeeId;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-    public String getUsername() {
-        return username;
-    }
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public String getPassword() {
-        return password;
-    }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public Set<UserAuthority> getAuthorities() { return authorities; }
+    public void setAuthorities(Set<UserAuthority> authorities) { this.authorities = authorities; }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
-    public Set<UserAuthority> getAuthorities() {
-        return authorities;
-    }
-
-    public void setAuthorities(Set<UserAuthority> authorities) {
-        this.authorities = authorities;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
     // ✅ Enum for Roles
     public enum Role {

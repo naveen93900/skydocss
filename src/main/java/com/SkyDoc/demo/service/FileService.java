@@ -1,4 +1,4 @@
-//package com.SkyDoc.demo.service;
+package com.SkyDoc.demo.service;
 //
 //
 //import com.SkyDoc.demo.entity.FileEntity;
@@ -58,7 +58,6 @@
 //}
 //
 
-package com.SkyDoc.demo.service;
 
 import com.SkyDoc.demo.entity.FileEntity;
 import com.SkyDoc.demo.entity.Folder;
@@ -71,7 +70,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 
@@ -89,7 +90,43 @@ public class FileService {
         Optional<FileEntity> fileOpt = fileRepo.findById(id);
         return fileOpt.orElse(null);
     }
-    public FileEntity uploadFile(MultipartFile file, Long folderId) throws IOException {
+//    public FileEntity uploadFile(MultipartFile file, Long folderId) throws IOException {
+//        Folder folder = null;
+//        if (folderId != null) {
+//            folder = folderRepo.findById(folderId)
+//                    .orElseThrow(() -> new RuntimeException("Folder not found with id: " + folderId));
+//        }
+//
+//        // Use absolute path to avoid Tomcat temp folder issue
+//        String uploadDir = System.getProperty("user.dir") + "/uploads";
+//        Files.createDirectories(Paths.get(uploadDir));
+//
+//        String fileName = Paths.get(file.getOriginalFilename()).getFileName().toString();
+//        String filePath = Paths.get(uploadDir, fileName).toString();
+//
+//        file.transferTo(new File(filePath));
+//
+//        FileEntity fileEntity = FileEntity.builder()
+//                .name(fileName)
+//                .filePath(filePath)
+//                .contentType(file.getContentType())
+//                .size(file.getSize())
+//                .folder(folder)
+//                .createdAt(LocalDateTime.now())
+//                .build();
+//
+//        return fileRepo.save(fileEntity);
+//    }
+    
+    
+    
+ 
+    public FileEntity uploadFile(MultipartFile file, Long folderId,
+                                 String issueDateStr,
+                                 String issueType,
+                                 String fileNameOverride,
+                                 String revisionNumber) throws IOException {
+
         Folder folder = null;
         if (folderId != null) {
             folder = folderRepo.findById(folderId)
@@ -100,7 +137,8 @@ public class FileService {
         String uploadDir = System.getProperty("user.dir") + "/uploads";
         Files.createDirectories(Paths.get(uploadDir));
 
-        String fileName = Paths.get(file.getOriginalFilename()).getFileName().toString();
+        String originalFileName = Paths.get(file.getOriginalFilename()).getFileName().toString();
+        String fileName = (fileNameOverride != null && !fileNameOverride.isBlank()) ? fileNameOverride : originalFileName;
         String filePath = Paths.get(uploadDir, fileName).toString();
 
         file.transferTo(new File(filePath));
@@ -114,8 +152,23 @@ public class FileService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
+        // parse issueDate (optional)
+        if (issueDateStr != null && !issueDateStr.isBlank()) {
+            try {
+                LocalDate issueDate = LocalDate.parse(issueDateStr); // expecting yyyy-MM-dd
+                fileEntity.setIssueDate(issueDate);
+            } catch (DateTimeParseException e) {
+                // handle parse error (ignore or throw). For now, ignore and log
+                System.err.println("Failed to parse issueDate: " + issueDateStr);
+            }
+        }
+
+        if (issueType != null) fileEntity.setIssueType(issueType);
+        if (revisionNumber != null) fileEntity.setRevisionNumber(revisionNumber);
+
         return fileRepo.save(fileEntity);
     }
+
     
     
   public List<FileEntity> getAll() { return fileRepo.findAll(); }

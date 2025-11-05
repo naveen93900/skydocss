@@ -40,12 +40,43 @@ public class FileController {
         return fileService.getAll();
     }
 
+//    @PostMapping(consumes = {"multipart/form-data"})
+//    public FileEntity uploadFile(
+//            @RequestParam("file") MultipartFile file,
+//            @RequestParam(value = "folderId", required = false) Long folderId
+//    ) throws IOException {
+//        return fileService.uploadFile(file, folderId);
+//    }
+    
     @PostMapping(consumes = {"multipart/form-data"})
     public FileEntity uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "folderId", required = false) Long folderId
+            @RequestParam(value = "folderId", required = false) Long folderId,
+            @RequestParam(value = "issueDate", required = false) String issueDate,
+            @RequestParam(value = "issueType", required = false) String issueType,
+            @RequestParam(value = "fileName", required = false) String fileName,
+            @RequestParam(value = "revisionNumber", required = false) String revisionNumber
     ) throws IOException {
-        return fileService.uploadFile(file, folderId);
+        return fileService.uploadFile(file, folderId, issueDate, issueType, fileName, revisionNumber);
+    }
+
+
+    @GetMapping("/{id}/metadata")
+    public ResponseEntity<Map<String, Object>> getFileMetadata(@PathVariable("id") Long id) {
+        FileEntity file = fileService.getFileById(id);
+        
+        if (file == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Map<String, Object> metadata = Map.of(
+            "fileName", file.getName(),
+            "issueDate", file.getIssueDate(),
+            "issueType", file.getIssueType(),
+            "revisionNumber", file.getRevisionNumber()
+        );
+
+        return ResponseEntity.ok(metadata);
     }
 
 
