@@ -6,6 +6,8 @@ import com.SkyDoc.demo.entity.User;
 import com.SkyDoc.demo.service.ActivityHistoryService;
 import com.SkyDoc.demo.service.AuthService;
 import jakarta.servlet.http.HttpSession;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -63,23 +65,23 @@ public class AuthController {
 //    }
 
     
-    
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody Map<String, String> body, HttpSession session) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> body, HttpSession session) {
         String username = body.get("username");
         String password = body.get("password");
 
-        Optional<User> userOpt = authService.login(username, password);
-        if (userOpt.isEmpty()) {
-            return Map.of("error", "Invalid username or password");
-        }
-
-        // Store serializable DTO (safe for session)
-        UserSessionDTO sessionUser = new UserSessionDTO(userOpt.get());
-        session.setAttribute("user", sessionUser);
-
-        // ✅ Log login activity
         try {
+            Optional<User> userOpt = authService.login(username, password);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(401).body(Map.of("error", "Invalid username or password"));
+            }
+
+            User user = userOpt.get();
+
+            UserSessionDTO sessionUser = new UserSessionDTO(user);
+            session.setAttribute("user", sessionUser);
+
+            // Log login activity (as you already do)
             ActivityHistory loginActivity = new ActivityHistory();
             loginActivity.setUsername(sessionUser.getUsername());
             loginActivity.setRole(sessionUser.getRole());
@@ -87,19 +89,21 @@ public class AuthController {
             loginActivity.setTargetType("SYSTEM");
             loginActivity.setDetails("User logged in successfully");
             loginActivity.setTimestamp(LocalDateTime.now());
-
             activityHistoryService.save(loginActivity);
-        } catch (Exception e) {
-            // Safe fallback — don’t break login if logging fails
-            System.err.println("Failed to log login activity: " + e.getMessage());
-        }
 
-        return Map.of(
-                "message", "Login successful",
-                "user", sessionUser
-        );
+            return ResponseEntity.ok(Map.of(
+                    "message", "Login successful",
+                    "user", sessionUser
+            ));
+
+        } catch (RuntimeException e) {
+            if (e.getMessage().equals("Account is locked")) {
+                return ResponseEntity.status(423).body(Map.of("error", "Account is locked"));
+            }
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+        }
     }
-    
+
    
     
     // ✅ Logout user

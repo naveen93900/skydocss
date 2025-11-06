@@ -29,12 +29,20 @@ public class AuthService {
         Optional<User> userOpt = userRepository.findByUsername(username);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
+
+            // 🔒 Step 1: Block locked users
+            if (user.isLocked()) {
+                throw new RuntimeException("Account is locked");
+            }
+
+            // 🔑 Step 2: Verify password
             if (passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
                 return Optional.of(user);
             }
         }
         return Optional.empty();
     }
+
 
     // ✅ Check if username already exists
     public boolean usernameExists(String username) {

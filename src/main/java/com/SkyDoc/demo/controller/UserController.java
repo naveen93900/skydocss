@@ -5,16 +5,18 @@ import com.SkyDoc.demo.entity.User;
 import com.SkyDoc.demo.repository.UserRepository;
 import com.SkyDoc.demo.service.UserService;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -23,11 +25,10 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
 
-
-    public UserController(UserService userService, PasswordEncoder passwordEncoder,UserRepository userRepository) {
+    public UserController(UserService userService, PasswordEncoder passwordEncoder, UserRepository userRepository) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
-        this.userRepository=userRepository;
+        this.userRepository = userRepository;
     }
 
     // ✅ Get all users
@@ -35,33 +36,19 @@ public class UserController {
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         List<UserDTO> userDTOs = userService.getAllUsers()
                 .stream()
-                .map(user -> new UserDTO(
-                        user.getId(),
-                        user.getEmployeeName(),
-                        user.getEmployeeId(),
-                        user.getUsername(),
-                        user.getEmail(),
-                        user.getRole()))
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(userDTOs);
     }
 
-    // ✅ Get by ID
+    // ✅ Get user by ID
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable("id") Long id) {
         User user = userService.getUserById(id);
-        UserDTO dto = new UserDTO(
-                user.getId(),
-                user.getEmployeeName(),
-                user.getEmployeeId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getRole());
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(convertToDTO(user));
     }
-    
-    
- // ✅ Get current logged-in user
+
+    // ✅ Get current logged-in user
     @GetMapping("/current")
     public ResponseEntity<User> getCurrentUser(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -76,6 +63,21 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    // ✅ Lock/Unlock User (Toggle)
+    @PatchMapping("/{id}/lock")
+    public ResponseEntity<UserDTO> toggleUserLock(@PathVariable("id") Long id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User user = userOpt.get();
+        user.setLocked(!user.isLocked()); // Toggle lock status
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        return ResponseEntity.ok(convertToDTO(user));
+    }
 
     // ✅ Create new user
     @PostMapping
@@ -89,20 +91,11 @@ public class UserController {
                 userDTO.getRole()
         );
 
-        // store both plain and encoded
+        // Store both plain and encoded password
         user.setPasswordHash(passwordEncoder.encode(userDTO.getPassword()));
 
         User saved = userService.createUser(user);
-
-        UserDTO responseDTO = new UserDTO(
-                saved.getId(),
-                saved.getEmployeeName(),
-                saved.getEmployeeId(),
-                saved.getUsername(),
-                saved.getEmail(),
-                saved.getRole());
-
-        return ResponseEntity.ok(responseDTO);
+        return ResponseEntity.ok(convertToDTO(saved));
     }
 
     // ✅ Update existing user
@@ -122,16 +115,7 @@ public class UserController {
         }
 
         User updated = userService.updateUser(id, existing);
-
-        UserDTO responseDTO = new UserDTO(
-                updated.getId(),
-                updated.getEmployeeName(),
-                updated.getEmployeeId(),
-                updated.getUsername(),
-                updated.getEmail(),
-                updated.getRole());
-
-        return ResponseEntity.ok(responseDTO);
+        return ResponseEntity.ok(convertToDTO(updated));
     }
 
     // ✅ Delete user
@@ -140,11 +124,17 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully");
     }
-    
-  
-    
-    
-    
-    
-    
+
+    // ✅ Utility method to convert Entity → DTO (keeps all code clean)
+    private UserDTO convertToDTO(User user) {
+        return new UserDTO(
+                user.getId(),
+                user.getEmployeeName(),
+                user.getEmployeeId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getRole(),
+                user.isLocked()
+        );
+    }
 }

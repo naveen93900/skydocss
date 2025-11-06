@@ -8,19 +8,30 @@ public class UserDTO {
     private String employeeName;
     private String employeeId;
     private String username;
-    private String password;  // plain password (optional for creation)
+    private String password;  // optional (used only when creating/updating)
     private String email;
     private Role role;
+    private boolean locked;   // ✅ represents account lock status
 
+    // ✅ Default constructor (required by Jackson)
     public UserDTO() {}
 
-    public UserDTO(Long id, String employeeName, String employeeId, String username, String email, Role role) {
+    // ✅ Full constructor (used by controller)
+    public UserDTO(Long id, String employeeName, String employeeId, String username,
+                   String email, Role role, boolean locked) {
         this.id = id;
         this.employeeName = employeeName;
         this.employeeId = employeeId;
         this.username = username;
         this.email = email;
         this.role = role;
+        this.locked = locked;
+    }
+
+    // ✅ Legacy constructor (optional, keeps backward compatibility)
+    public UserDTO(Long id, String employeeName, String employeeId, String username,
+                   String email, Role role) {
+        this(id, employeeName, employeeId, username, email, role, false);
     }
 
     // ✅ Getters and Setters
@@ -44,4 +55,7 @@ public class UserDTO {
 
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
+
+    public boolean isLocked() { return locked; }
+    public void setLocked(boolean locked) { this.locked = locked; }
 }

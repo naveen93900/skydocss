@@ -19,6 +19,11 @@ public class User implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ✅ Lock status (used to enable/disable user login)
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean locked = false;
+
+
     @Column(nullable = false)
     private String employeeName;
 
@@ -29,7 +34,7 @@ public class User implements Serializable {
     private String username;
 
     @Column(nullable = false)
-    private String password; // store plain password (if needed for audit — not secure in prod)
+    private String password; // plain password (for audit only)
 
     @JsonIgnore
     @Column(name = "password_hash")
@@ -91,7 +96,13 @@ public class User implements Serializable {
     public void setAuthorities(Set<UserAuthority> authorities) { this.authorities = authorities; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
+
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; } // ✅ Added setter
+
+    // ✅ Getter and Setter for locked
+    public boolean isLocked() { return locked; }
+    public void setLocked(boolean locked) { this.locked = locked; }
 
     // ✅ Enum for Roles
     public enum Role {
